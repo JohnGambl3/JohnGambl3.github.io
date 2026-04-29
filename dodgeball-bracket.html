@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dodgeball Tournament</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #E8321A;
+    --red-dark: #B52410;
+    --red-dim: rgba(232,50,26,0.12);
+    --yellow: #F5C842;
+    --yellow-dim: rgba(245,200,66,0.1);
+    --bg: #0E0E0E;
+    --surface: #181818;
+    --surface2: #222222;
+    --border: rgba(255,255,255,0.08);
+    --border-strong: rgba(255,255,255,0.18);
+    --text: #F0EDE8;
+    --text-muted: rgba(240,237,232,0.45);
+    --text-dim: rgba(240,237,232,0.25);
+    --green: #3ECF6A;
+    --green-dim: rgba(62,207,106,0.12);
+    --blue: #5BA4F5;
+    --blue-dim: rgba(91,164,245,0.1);
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    padding: 2rem 1.5rem 4rem;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+    opacity: 0.025;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; position: relative; z-index: 1; }
+
+  header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 2.5rem;
+    border-bottom: 1px solid var(--border-strong);
+    padding-bottom: 1.25rem;
+  }
+  .logo-block h1 {
+    font-family: var(--font-display);
+    font-size: clamp(42px, 8vw, 72px);
+    line-height: 0.9;
+    letter-spacing: 0.02em;
+  }
+  .logo-block h1 span { color: var(--red); }
+  .logo-block p { font-size: 13px; color: var(--text-muted); margin-top: 6px; letter-spacing: 0.05em; text-transform: uppercase; }
+  .stats-bar { display: flex; gap: 1.5rem; align-items: flex-end; }
+  .stat { text-align: right; }
+  .stat-val { font-family: var(--font-display); font-size: 32px; line-height: 1; color: var(--yellow); }
+  .stat-lbl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+
+  /* Setup */
+  .setup-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; }
+  .setup-panel h2 { font-family: var(--font-display); font-size: 22px; letter-spacing: 0.05em; margin-bottom: 1rem; }
+  .team-inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 1rem; }
+  .team-input-row { display: flex; align-items: center; gap: 8px; }
+  .team-num { font-family: var(--font-display); font-size: 18px; color: var(--red); min-width: 24px; }
+  input[type="text"] {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); font-family: var(--font-body); font-size: 14px; padding: 8px 12px;
+    width: 100%; outline: none; transition: border-color 0.15s;
+  }
+  input[type="text"]:focus { border-color: var(--red); }
+  input[type="text"]::placeholder { color: var(--text-dim); }
+  .btn-start {
+    font-family: var(--font-display); font-size: 20px; letter-spacing: 0.08em;
+    background: var(--red); color: #fff; border: none; border-radius: 8px;
+    padding: 10px 28px; cursor: pointer; transition: background 0.15s, transform 0.1s;
+  }
+  .btn-start:hover { background: var(--red-dark); }
+  .btn-start:active { transform: scale(0.98); }
+  .btn-reset {
+    font-family: var(--font-body); font-size: 13px; background: transparent;
+    color: var(--text-muted); border: 1px solid var(--border); border-radius: 6px;
+    padding: 6px 14px; cursor: pointer; transition: border-color 0.15s, color 0.15s;
+  }
+  .btn-reset:hover { border-color: var(--border-strong); color: var(--text); }
+
+  /* Game order list */
+  .game-list { display: flex; flex-direction: column; gap: 6px; }
+
+  /* Section divider */
+  .section-divider {
+    display: flex; align-items: center; gap: 12px;
+    margin: 1.75rem 0 0.75rem;
+  }
+  .section-divider:first-child { margin-top: 0; }
+  .phase-tag {
+    font-family: var(--font-display); font-size: 11px; letter-spacing: 0.12em;
+    padding: 3px 9px; border-radius: 4px; text-transform: uppercase; white-space: nowrap;
+  }
+  .phase-tag.winners { background: var(--green-dim); color: var(--green); border: 1px solid rgba(62,207,106,0.25); }
+  .phase-tag.losers  { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(232,50,26,0.25); }
+  .phase-tag.mixed   { background: var(--blue-dim);  color: var(--blue);  border: 1px solid rgba(91,164,245,0.25); }
+  .phase-tag.final   { background: var(--yellow-dim);color: var(--yellow);border: 1px solid rgba(245,200,66,0.25); }
+  .section-title { font-family: var(--font-display); font-size: 17px; letter-spacing: 0.04em; color: var(--text); }
+  .section-line { flex: 1; height: 1px; background: var(--border); }
+  .rest-note { font-size: 11px; color: var(--text-dim); white-space: nowrap; }
+
+  /* Match row — horizontal layout */
+  .match-row {
+    display: flex; align-items: stretch;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden;
+    transition: border-color 0.15s;
+  }
+  .match-row:hover { border-color: var(--border-strong); }
+  .match-row.done { border-color: rgba(62,207,106,0.18); }
+  .match-row.upcoming { opacity: 0.5; pointer-events: none; }
+
+  .game-num-col {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 0 14px;
+    border-right: 1px solid var(--border);
+    min-width: 52px;
+  }
+  .game-num-label { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); }
+  .game-num-val { font-family: var(--font-display); font-size: 22px; color: var(--text-muted); line-height: 1; }
+  .match-row.done .game-num-val { color: var(--green); }
+
+  .teams-col { display: flex; flex-direction: column; flex: 1; }
+  .team-btn {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 11px 14px; background: transparent; border: none;
+    color: var(--text-muted); font-family: var(--font-body); font-size: 14px;
+    cursor: pointer; text-align: left; transition: background 0.12s, color 0.12s;
+    border-bottom: 1px solid var(--border); gap: 8px; width: 100%;
+  }
+  .team-btn:last-child { border-bottom: none; }
+  .team-btn:hover:not(:disabled) { background: var(--surface2); color: var(--text); }
+  .team-btn:disabled { cursor: default; }
+  .team-btn.winner { background: var(--green-dim); color: var(--green); font-weight: 600; }
+  .team-btn.loser  { color: var(--text-dim); text-decoration: line-through; }
+  .tbd-label { color: var(--text-dim); font-style: italic; font-size: 13px; }
+  .win-check { font-size: 11px; color: var(--green); opacity: 0; }
+  .team-btn.winner .win-check { opacity: 1; }
+
+  .meta-col {
+    display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between;
+    padding: 8px 10px; border-left: 1px solid var(--border); min-width: 80px; gap: 4px;
+  }
+  .bracket-tag {
+    font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 2px 6px; border-radius: 3px; white-space: nowrap;
+  }
+  .bracket-tag.w { background: var(--green-dim); color: var(--green); }
+  .bracket-tag.l { background: var(--red-dim); color: var(--red); }
+  .bracket-tag.f { background: var(--yellow-dim); color: var(--yellow); }
+  .undo-btn {
+    font-size: 10px; background: transparent; border: none;
+    color: var(--text-dim); cursor: pointer; transition: color 0.12s;
+    padding: 2px 0; display: none; font-family: var(--font-body);
+  }
+  .undo-btn:hover { color: var(--red); }
+  .match-row.done .undo-btn { display: block; }
+
+  /* Rest badge inline */
+  .rest-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 10px; color: var(--text-dim); letter-spacing: 0.04em;
+    padding: 3px 8px; background: var(--surface2);
+    border-radius: 4px; border: 1px dashed var(--border);
+    margin: 2px 0;
+    align-self: flex-start;
+  }
+
+  /* Champion */
+  .champion-banner {
+    background: linear-gradient(135deg, #1a1400, #2a1f00);
+    border: 1px solid rgba(245,200,66,0.4); border-radius: 12px;
+    padding: 2rem; text-align: center; margin-top: 2rem; display: none;
+  }
+  .champion-banner.visible { display: block; animation: fadeIn 0.4s ease; }
+  .champ-label { font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(245,200,66,0.6); margin-bottom: 6px; }
+  .champ-name { font-family: var(--font-display); font-size: clamp(36px,8vw,64px); color: var(--yellow); letter-spacing: 0.05em; line-height: 1; }
+  .champ-sub { font-size: 13px; color: var(--text-muted); margin-top: 8px; }
+
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  .hidden { display: none !important; }
+  .tournament-area { display: none; }
+  .tournament-area.visible { display: block; }
+  .top-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; }
+  .reset-note { font-size: 11px; color: var(--text-dim); padding: 10px 12px; background: var(--surface); border-radius: 6px; border: 1px solid var(--border); border-left: 2px solid var(--yellow); margin-top: 1rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo-block">
+      <h1>DODGE<span>BALL</span></h1>
+      <p>Double elimination · Rest-optimised schedule</p>
+    </div>
+    <div class="stats-bar" id="stats-bar" style="display:none">
+      <div class="stat">
+        <div class="stat-val" id="val-played">0</div>
+        <div class="stat-lbl">Played</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val" id="val-left">0</div>
+        <div class="stat-lbl">Left</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="setup-panel" id="setup-panel">
+    <h2>ENTER TEAM NAMES</h2>
+    <div class="team-inputs" id="team-inputs"></div>
+    <button class="btn-start" onclick="startTournament()">Generate Schedule</button>
+  </div>
+
+  <div class="tournament-area" id="tournament-area">
+    <div class="top-bar">
+      <button class="btn-reset" onclick="resetTournament()">&#8592; New tournament</button>
+    </div>
+    <div class="game-list" id="game-list"></div>
+    <div class="champion-banner" id="champion-banner">
+      <div class="champ-label">Tournament Champion</div>
+      <div class="champ-name" id="champ-name"></div>
+      <div class="champ-sub" id="champ-sub"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let teams = [];
+let M = {}; // matches keyed by id
+
+// Game schedule — fixed play order with rest metadata
+// Each entry: { matchId, sectionBefore?, restBefore? }
+// sectionBefore = { tag, tagClass, title }
+// restBefore = label shown as divider hint
+
+const SCHEDULE = [
+  { sectionBefore: { tag:'Winners', cls:'winners', title:'Round 1 — Winners bracket' } },
+  { matchId: 'wr1_1' },
+  { matchId: 'wr1_2' },
+  { matchId: 'wr1_3' },
+  { sectionBefore: { tag:'Losers', cls:'losers', title:'Round 1 — Losers bracket' }, restNote: 'Teams from game 1 & 2 have had a full game rest' },
+  { matchId: 'lr1_1' },
+  { sectionBefore: { tag:'Winners', cls:'winners', title:'Round 2 — Winners semifinals' }, restNote: 'All teams have had at least 1 game rest' },
+  { matchId: 'wr2_1' },
+  { sectionBefore: { tag:'Winners', cls:'winners', title:'Winners final' }, restNote: 'Losers bracket finalist has had 1 game rest' },
+  { matchId: 'wf_1' },
+  { sectionBefore: { tag:'Losers', cls:'losers', title:'Round 2a — Losers bracket' }, restNote: 'WR2 loser just played · LR1 winner has had 2 games rest' },
+  { matchId: 'lr2_1' },
+  { sectionBefore: { tag:'Losers', cls:'losers', title:'Round 2b — Losers bracket' }, restNote: 'WF loser just played · WR1-3 loser has had 3 games rest' },
+  { matchId: 'lr2_2' },
+  { sectionBefore: { tag:'Losers', cls:'losers', title:'Losers final' }, restNote: 'Both teams have had 1 game rest' },
+  { matchId: 'lf_1' },
+  { sectionBefore: { tag:'Grand Final', cls:'final', title:'Grand final — Championship' } },
+  { matchId: 'gf_1' },
+  { matchId: 'gf_reset', conditional: true },
+];
+
+function buildTeamInputs() {
+  const c = document.getElementById('team-inputs');
+  c.innerHTML = '';
+  for (let i = 1; i <= 6; i++) {
+    const row = document.createElement('div');
+    row.className = 'team-input-row';
+    row.innerHTML = `<span class="team-num">${i}</span><input type="text" id="ti-${i}" placeholder="Team ${i}" maxlength="20">`;
+    c.appendChild(row);
+  }
+}
+
+function startTournament() {
+  teams = [];
+  for (let i = 1; i <= 6; i++) {
+    const v = document.getElementById(`ti-${i}`).value.trim();
+    teams.push(v || `Team ${i}`);
+  }
+  initMatches();
+  propagate();
+  document.getElementById('setup-panel').classList.add('hidden');
+  document.getElementById('tournament-area').classList.add('visible');
+  document.getElementById('stats-bar').style.display = '';
+  render();
+}
+
+function resetTournament() {
+  document.getElementById('setup-panel').classList.remove('hidden');
+  document.getElementById('tournament-area').classList.remove('visible');
+  document.getElementById('stats-bar').style.display = 'none';
+  document.getElementById('champion-banner').classList.remove('visible');
+  M = {};
+  buildTeamInputs();
+}
+
+function initMatches() {
+  const s = [...teams].sort(() => Math.random() - 0.5);
+  let gameNum = 1;
+  function mk(id, a, b, bracketTag, bracketCls) {
+    return { id, label: `Game ${gameNum++}`, teamA: a||null, teamB: b||null, winner:null, loser:null, bracketTag, bracketCls };
+  }
+  M = {
+    wr1_1:    mk('wr1_1',    s[0], s[1], 'Winners', 'w'),
+    wr1_2:    mk('wr1_2',    s[2], s[3], 'Winners', 'w'),
+    wr1_3:    mk('wr1_3',    s[4], s[5], 'Winners', 'w'),
+    lr1_1:    mk('lr1_1',    null, null, 'Losers',  'l'),
+    wr2_1:    mk('wr2_1',    null, null, 'Winners', 'w'),
+    wf_1:     mk('wf_1',     null, null, 'Winners', 'w'),
+    lr2_1:    mk('lr2_1',    null, null, 'Losers',  'l'),
+    lr2_2:    mk('lr2_2',    null, null, 'Losers',  'l'),
+    lf_1:     mk('lf_1',     null, null, 'Losers',  'l'),
+    gf_1:     mk('gf_1',     null, null, 'Final',   'f'),
+    gf_reset: mk('gf_reset', null, null, 'Reset',   'f'),
+  };
+}
+
+function propagate() {
+  const m = M;
+  // LR1: L of wr1_1 vs L of wr1_2
+  if (m.wr1_1.loser && m.wr1_2.loser && !m.lr1_1.teamA)
+    { m.lr1_1.teamA = m.wr1_1.loser; m.lr1_1.teamB = m.wr1_2.loser; }
+  // WR2: W of wr1_1 vs W of wr1_2
+  if (m.wr1_1.winner && m.wr1_2.winner && !m.wr2_1.teamA)
+    { m.wr2_1.teamA = m.wr1_1.winner; m.wr2_1.teamB = m.wr1_2.winner; }
+  // WF: W of wr1_3 (bye) vs W of wr2_1
+  if (m.wr1_3.winner && m.wr2_1.winner && !m.wf_1.teamA)
+    { m.wf_1.teamA = m.wr1_3.winner; m.wf_1.teamB = m.wr2_1.winner; }
+  // LR2_1: W of lr1_1 vs L of wr2_1
+  if (m.lr1_1.winner && m.wr2_1.loser && !m.lr2_1.teamA)
+    { m.lr2_1.teamA = m.lr1_1.winner; m.lr2_1.teamB = m.wr2_1.loser; }
+  // LR2_2: L of wr1_3 vs L of wf_1
+  if (m.wr1_3.loser && m.wf_1.loser && !m.lr2_2.teamA)
+    { m.lr2_2.teamA = m.wr1_3.loser; m.lr2_2.teamB = m.wf_1.loser; }
+  // LF: W of lr2_1 vs W of lr2_2
+  if (m.lr2_1.winner && m.lr2_2.winner && !m.lf_1.teamA)
+    { m.lf_1.teamA = m.lr2_1.winner; m.lf_1.teamB = m.lr2_2.winner; }
+  // GF: W of wf_1 vs W of lf_1
+  if (m.wf_1.winner && m.lf_1.winner && !m.gf_1.teamA)
+    { m.gf_1.teamA = m.wf_1.winner; m.gf_1.teamB = m.lf_1.winner; }
+  // Reset: if losers finalist wins GF
+  if (m.gf_1.winner && m.gf_1.winner === m.lf_1.winner && !m.gf_reset.teamA)
+    { m.gf_reset.teamA = m.gf_1.winner; m.gf_reset.teamB = m.gf_1.loser; }
+}
+
+const DEPS = {
+  wr1_1: ['wr2_1','lr1_1'],
+  wr1_2: ['wr2_1','lr1_1'],
+  wr1_3: ['wf_1','lr2_2'],
+  wr2_1: ['wf_1','lr2_1'],
+  wf_1:  ['gf_1','lr2_2'],
+  lr1_1: ['lr2_1'],
+  lr2_1: ['lf_1'],
+  lr2_2: ['lf_1'],
+  lf_1:  ['gf_1'],
+  gf_1:  ['gf_reset'],
+  gf_reset: []
+};
+
+function resetDownstream(startId) {
+  const visited = new Set();
+  function cascade(id) {
+    if (visited.has(id)) return;
+    visited.add(id);
+    const match = M[id];
+    match.winner = null; match.loser = null;
+    if (id !== startId) { match.teamA = null; match.teamB = null; }
+    (DEPS[id]||[]).forEach(cascade);
+  }
+  cascade(startId);
+}
+
+function setWinner(matchId, team) {
+  const m = M[matchId];
+  if (m.winner || !team) return;
+  m.winner = team;
+  m.loser = team === m.teamA ? m.teamB : m.teamA;
+  propagate();
+  render();
+}
+
+function undoMatch(matchId) {
+  resetDownstream(matchId);
+  propagate();
+  render();
+}
+
+function getChampion() {
+  if (M.gf_reset && M.gf_reset.winner) return { name: M.gf_reset.winner, note: 'Came back through the losers bracket to claim the title' };
+  if (M.gf_1 && M.gf_1.winner && M.wf_1 && M.gf_1.winner === M.wf_1.winner)
+    return { name: M.gf_1.winner, note: 'Undefeated throughout the entire tournament' };
+  return null;
+}
+
+function isMatchPlayable(matchId) {
+  const m = M[matchId];
+  return !!(m.teamA && m.teamB && !m.winner);
+}
+
+function makeMatchRow(matchId) {
+  const m = M[matchId];
+  if (!m) return null;
+  const ready = m.teamA && m.teamB;
+  const done = !!m.winner;
+
+  const row = document.createElement('div');
+  row.className = 'match-row' + (done ? ' done' : !ready ? ' upcoming' : '');
+
+  const teamALabel = m.teamA ? m.teamA : '<span class="tbd-label">TBD</span>';
+  const teamBLabel = m.teamB ? m.teamB : '<span class="tbd-label">TBD</span>';
+  const clsA = m.winner ? (m.winner === m.teamA ? 'winner' : 'loser') : '';
+  const clsB = m.winner ? (m.winner === m.teamB ? 'winner' : 'loser') : '';
+  const disA = (!ready || done) ? 'disabled' : '';
+  const disB = (!ready || done) ? 'disabled' : '';
+  const safeA = (m.teamA||'').replace(/'/g, "\\'");
+  const safeB = (m.teamB||'').replace(/'/g, "\\'");
+
+  row.innerHTML = `
+    <div class="game-num-col">
+      <span class="game-num-label">Game</span>
+      <span class="game-num-val">${m.label.replace('Game ','')}</span>
+    </div>
+    <div class="teams-col">
+      <button class="team-btn ${clsA}" ${disA} onclick="setWinner('${matchId}','${safeA}')">
+        <span>${teamALabel}</span><span class="win-check">✓</span>
+      </button>
+      <button class="team-btn ${clsB}" ${disB} onclick="setWinner('${matchId}','${safeB}')">
+        <span>${teamBLabel}</span><span class="win-check">✓</span>
+      </button>
+    </div>
+    <div class="meta-col">
+      <span class="bracket-tag ${m.bracketCls}">${m.bracketTag}</span>
+      <button class="undo-btn" onclick="undoMatch('${matchId}')">↩ undo</button>
+    </div>
+  `;
+  return row;
+}
+
+function render() {
+  propagate();
+  const list = document.getElementById('game-list');
+  list.innerHTML = '';
+
+  const showReset = M.gf_1 && M.gf_1.winner && M.lf_1 && M.gf_1.winner === M.lf_1.winner;
+
+  SCHEDULE.forEach(entry => {
+    if (entry.conditional && !showReset) return;
+
+    if (entry.sectionBefore) {
+      const s = entry.sectionBefore;
+      const div = document.createElement('div');
+      div.className = 'section-divider';
+      div.innerHTML = `
+        <span class="phase-tag ${s.cls}">${s.tag}</span>
+        <span class="section-title">${s.title}</span>
+        <span class="section-line"></span>
+        ${entry.restNote ? `<span class="rest-note">${entry.restNote}</span>` : ''}
+      `;
+      list.appendChild(div);
+    }
+
+    if (entry.matchId) {
+      const row = makeMatchRow(entry.matchId);
+      if (row) list.appendChild(row);
+    }
+  });
+
+  // Reset note
+  if (showReset && !document.getElementById('reset-note')) {
+    const note = document.createElement('p');
+    note.id = 'reset-note';
+    note.className = 'reset-note';
+    note.textContent = 'Reset game triggered — the losers finalist won the grand final, so both teams now have one loss. Play one final game to decide the champion.';
+    list.appendChild(note);
+  }
+
+  // Champion
+  const champ = getChampion();
+  const banner = document.getElementById('champion-banner');
+  if (champ) {
+    banner.classList.add('visible');
+    document.getElementById('champ-name').textContent = champ.name;
+    document.getElementById('champ-sub').textContent = champ.note;
+  } else {
+    banner.classList.remove('visible');
+  }
+
+  // Stats
+  const all = ['wr1_1','wr1_2','wr1_3','lr1_1','wr2_1','wf_1','lr2_1','lr2_2','lf_1','gf_1'];
+  if (showReset) all.push('gf_reset');
+  let played = 0;
+  all.forEach(id => { if (M[id] && M[id].winner) played++; });
+  document.getElementById('val-played').textContent = played;
+  document.getElementById('val-left').textContent = all.length - played;
+}
+
+buildTeamInputs();
+</script>
+</body>
+</html>
